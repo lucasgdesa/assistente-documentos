@@ -1,1 +1,3 @@
 * text=auto eol=lf
+dados/brutos/** -text
+tests/fixtures/** -text

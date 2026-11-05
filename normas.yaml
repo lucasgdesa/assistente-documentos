@@ -1,0 +1,51 @@
+# Manifesto das normas (RF1). Os HTMLs foram salvos manualmente pelo navegador
+# ("página completa") porque o Planalto recusa conexões por script nesta rede.
+# O arquivo é uma serialização do navegador, não os bytes originais do servidor.
+# sha256, tamanho e charset são atualizados por `python -m ingestao.coletar registrar`.
+limite_caracteres: 1500
+normas:
+  - sigla: CDC
+    id_prefixo: cdc
+    titulo: Lei nº 8.078, de 11 de setembro de 1990 (Código de Defesa do Consumidor)
+    identificacao: "LEI Nº 8.078, DE 11 DE SETEMBRO DE 1990."
+    ementa: Dispõe sobre a proteção do consumidor e dá outras providências.
+    url: https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm
+    arquivo: dados/brutos/cdc.htm
+    charset: windows-1252
+    origem: download manual pelo navegador (página completa)
+    data_coleta: "2026-11-05"
+    sha256: "db97457dab4ec400c6bb4c74fdd4679a983272585e1dc2ea4f5bb6dfcff2be5b"
+    tamanho: 172908
+    ultima_alteracao_observada: Medida Provisória nº 1.393, de 2026 (art. 57, § 1º e § 2º); pode perder eficácia
+    vigencia: Em vigor; texto compilado do Planalto na data de coleta
+  - sigla: Dec. 7.962
+    id_prefixo: dec7962
+    titulo: Decreto nº 7.962, de 15 de março de 2013 (comércio eletrônico)
+    identificacao: "DECRETO Nº 7.962, DE 15 DE MARÇO DE 2013"
+    ementa: Regulamenta a Lei nº 8.078, de 11 de setembro de 1990, para dispor sobre a contratação no comércio eletrônico.
+    url: https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm
+    arquivo: dados/brutos/dec-7962.htm
+    charset: windows-1252
+    origem: download manual pelo navegador (página completa)
+    data_coleta: "2026-11-05"
+    sha256: "cce1a03f163a23b7dc8b129963411d66f16a79dc5a96bd8c83e8e181e849764b"
+    tamanho: 16831
+    ultima_alteracao_observada: nenhuma indicada na página
+    vigencia: Entra em vigor sessenta dias após a publicação no DOU de 15.3.2013 (art. 9º)
+    correcoes_espaco:
+      - ["ante riores", "anteriores"]
+      - ["recebimento d as demandas", "recebimento das demandas"]
+  - sigla: Dec. 13.135
+    id_prefixo: dec13135
+    titulo: Decreto nº 13.135, de 9 de outubro de 2026 (Serviço de Atendimento ao Consumidor)
+    identificacao: "DECRETO Nº 13.135, DE 9 DE OUTUBRO DE 2026"
+    ementa: Regulamenta a Lei nº 8.078, de 11 de setembro de 1990 – Código de Defesa do Consumidor, para estabelecer diretrizes e normas sobre o Serviço de Atendimento ao Consumidor.
+    url: https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm
+    arquivo: dados/brutos/dec-13135.htm
+    charset: windows-1252
+    origem: download manual pelo navegador (página completa)
+    data_coleta: "2026-11-05"
+    sha256: "399906e77d7dbebb23cda2c36823a384c6f10c3382b21f31926ec5d37a1121c0"
+    tamanho: 52636
+    ultima_alteracao_observada: nenhuma indicada na página
+    vigencia: Entra em vigor vinte dias após a publicação no DOU de 13.10.2026 (art. 25); data exata a confirmar

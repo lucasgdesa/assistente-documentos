@@ -1,3 +1,5 @@
 .venv/
 node_modules/
 docs/prd/
+dados/
+tests/fixtures/
