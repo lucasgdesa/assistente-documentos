@@ -207,7 +207,7 @@ Exemplos do tipo: "a loja está errada no meu caso?", "vou ganhar?", "devo proce
 - **CA5.** Em HTML de teste com texto tachado, artigo revogado e artigo vetado, nada disso chega aos trechos, e todos aparecem no relatório.
 - **CA6.** Os identificadores são únicos. Testes cobrem artigo com letra (por exemplo, 54-A), parágrafo único, ordinais e incisos. Nenhum trecho passa do limite, e toda parte de artigo dividido repete norma, artigo e caput.
 - **CA7.** O verificador de atualização relata artigo alterado em HTML de teste e não relata mudança em execução sem alteração.
-- **CA32.** Nenhum artigo de `artigos_alteradores` aparece em `dados/trechos.jsonl`, nem como trecho nem na lista de dispositivos, e todos aparecem em `dados/trechos_alteradores.jsonl` com os campos do RF27. Em HTML de teste, artigo fora da lista com linha citada de outra norma, mesmo sem aspas, gera alerta no relatório. Nenhuma referência de `perguntas_v1.jsonl` aponta para esses artigos.
+- **CA32.** Nenhum artigo de `artigos_alteradores` aparece em `dados/trechos.jsonl`, nem como trecho nem na lista de dispositivos, e todos aparecem em `dados/trechos_alteradores.jsonl` com os campos do RF27. Em HTML de teste, artigo fora da lista com linha citada de outra norma, mesmo sem aspas, gera alerta no relatório. Nenhuma referência de `perguntas_v1.jsonl` aponta para esses artigos. Limitação: citação sem aspas e em sequência perfeita não gera alerta, então cada novo HTML exige conferência manual da lista `artigos_alteradores`.
 
 **Conjunto de perguntas**
 - **CA8.** O conjunto cumpre a composição da seção 13.2, com origem pública registrada em cada pergunta.
