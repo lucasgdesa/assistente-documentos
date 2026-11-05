@@ -15,8 +15,11 @@ Existem apenas os tipos compartilhados (`comum/tipos.py`), o contrato do núcleo
 
 ## Instalação (Windows, PowerShell)
 
+Requer Python 3.12 ou superior; o CI roda em 3.12. O Node.js só é necessário para
+o `prettier`.
+
 ```powershell
-py -3.12 -m venv .venv
+py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env   # preencha a chave só quando for necessária
