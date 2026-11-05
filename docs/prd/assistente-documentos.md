@@ -84,10 +84,10 @@ Cada entrega tem um único responsável.
 | ID | Requisito | Resp. | Marco |
 | --- | --- | --- | --- |
 | RF1 | Manifesto `normas.yaml` com título, sigla, URL oficial, data de coleta, SHA-256 e última alteração observada | dev | M1 |
-| RF2 | Coleta do HTML oficial, com cópia bruta versionada para reprodução sem depender do site | dev | M1 |
+| RF2 | Coleta do HTML oficial, com cópia bruta versionada para reprodução sem depender do site. O Planalto recusa conexões por script nesta rede: o download é manual, pelo navegador, e `ingestao/coletar.py` só valida e registra os arquivos salvos | dev | M1 |
 | RF3 | Parser que extrai hierarquia, artigos, parágrafos, incisos e alíneas, e que remove o texto tachado (`strike`) e os dispositivos revogados ou vetados, listando-os em relatório | dev | M1 |
 | RF4 | Trechos por estrutura: um artigo por trecho. Artigo acima de cerca de 1.500 caracteres é dividido entre parágrafos ou incisos, repetindo norma, artigo e caput em cada parte. Cada trecho traz norma, artigo, lista de dispositivos, hierarquia, vigência e data de coleta | dev | M1 |
-| RF5 | Verificador de atualização: baixa a página, compara dispositivos com a versão coletada e relata as diferenças | dev | M1 |
+| RF5 | Verificador de atualização: recebe por argumento um HTML novo, salvo manualmente (sem acesso à rede), compara dispositivos com a versão coletada e relata as diferenças | dev | M1 |
 | RF6 | Conjunto de 60 perguntas de referência (seção 13) | Lucas | M1 |
 | RF7 | `buscar(pergunta, k)` com BM25 sobre os trechos, com tokenização em português | Lucas | M2 |
 | RF8 | Avaliação da busca: Hit@5 e MRR por artigo e por dispositivo, por tipo de pergunta, sem usar a API | Lucas | M2 |
@@ -586,10 +586,11 @@ Hospedagem e GitHub: US$ 0 nos planos gratuitos, sem domínio próprio. Sem banc
 - Limite mensal de gasto por workspace no console. Não existe por chave nem no Default Workspace.
 - Plano gratuito do Render: 750 horas por mês, suspensão após 15 minutos sem tráfego e partida a frio de cerca de 1 minuto. O disco é descartável.
 - Lei 8.078/1990, Decreto 7.962/2013 e Decreto 13.135/2026 no site do Planalto. O Decreto 11.034/2022 consta como revogado.
+- Conexão por script ao Planalto (`httpx`, `curl`): recusada nesta rede em 2026-11-05. As três páginas foram salvas pelo navegador (RF2 e RF5).
 
 **Ainda a conferir:**
 - Antes do M3: crédito mínimo, termos de uso e retenção de dados da API da Anthropic, e se a conta do Lucas permite criar o workspace com limite.
-- No M1: data de vigência do Decreto 13.135/2026 no DOU, escopo de aplicação, redação vigente da Lei 8.078/1990 (consta alteração por medida provisória de 2026 no art. 57, § 1º), formato do HTML do Planalto, uso de `strike` e âncoras por artigo.
+- No M1, feito em 2026-11-05 e registrado em `docs/conferencia-normas.md`: escopo de aplicação, formato do HTML, uso de `strike` e âncoras por artigo, e a MP de 2026 no art. 57 do CDC. Seguem abertas a data exata de vigência do Decreto 13.135/2026 no DOU e a situação atual dessa MP.
 - No M7, se for usada: suporte da Citations API ao modelo.
 - Aplicação da Lei 9.610/98 ao texto das normas. Este PRD não é parecer jurídico.
 

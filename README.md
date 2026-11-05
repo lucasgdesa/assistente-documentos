@@ -8,10 +8,44 @@ reproduzível. O PRD está em `docs/prd/assistente-documentos.md`.
 Informação geral sobre a lei. Não é orientação jurídica e não substitui
 advogado ou Procon.
 
-## Estado atual: M0 (Fundação)
+## Estado atual: M1 (normas)
 
-Existem apenas os tipos compartilhados (`comum/tipos.py`), o contrato do núcleo
-(`comum/contrato.py`), testes e CI. Ainda não há ingestão, busca nem resposta.
+Existem os tipos compartilhados (`comum/tipos.py`), o contrato do núcleo
+(`comum/contrato.py`), a ingestão das três normas (`ingestao/`), testes e CI.
+Ainda não há busca nem resposta (`rag/` e `avaliacao/` são do Lucas).
+
+A ingestão transforma os HTMLs oficiais em trechos por artigo, sem texto
+tachado, revogado ou vetado:
+
+- `normas.yaml`: manifesto com título, sigla, URL oficial, data de coleta,
+  SHA-256 e última alteração observada de cada norma.
+- `dados/brutos/`: cópia bruta dos HTMLs. O Planalto recusa conexões por script
+  nesta rede, então os arquivos foram salvos manualmente pelo navegador (página
+  completa) em 2026-11-05. A serialização do navegador não é byte a byte a do
+  servidor.
+- `dados/trechos.jsonl`: trechos gerados (um artigo por trecho; artigo acima de
+  1.500 caracteres é dividido entre parágrafos ou incisos, repetindo o caput).
+- `dados/relatorio-ingestao.md`: relatório gerado, com artigos processados,
+  dispositivos removidos e páginas de origem. É a fonte das métricas do M1.
+- `docs/conferencia-normas.md`: o que foi conferido nas páginas (número, ementa,
+  vigência, formato do HTML).
+
+## Comandos de ingestão
+
+```powershell
+python -m ingestao.coletar validar     # confere os arquivos salvos com normas.yaml
+python -m ingestao.coletar registrar   # após salvar novos HTMLs: atualiza SHA-256
+python -m ingestao                     # gera dados/trechos.jsonl e o relatório
+python -m ingestao.verificar cdc caminho/do/novo-cdc.htm
+```
+
+O verificador compara um HTML novo, salvo manualmente, com a versão coletada e
+lista os dispositivos alterados, novos e removidos. Não acessa a rede. Sai com
+0 se não houver diferença, 1 se houver e 2 em caso de erro. As siglas aceitas
+são `cdc`, `dec7962` e `dec13135`.
+
+A ingestão é determinística: a data de coleta vem do manifesto, nunca do relógio,
+e duas execuções sobre o mesmo HTML geram arquivos idênticos.
 
 ## Instalação (Windows, PowerShell)
 
