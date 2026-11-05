@@ -42,6 +42,7 @@ class Norma:
     ultima_alteracao_observada: str
     vigencia: str
     correcoes_espaco: tuple[tuple[str, str], ...] = ()
+    artigos_alteradores: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,7 +53,8 @@ class Manifesto:
 
 def _norma(item: dict) -> Norma:
     pares = tuple((str(a), str(b)) for a, b in item.pop("correcoes_espaco", []))
-    return Norma(**item, correcoes_espaco=pares)
+    alteradores = tuple(str(x) for x in item.pop("artigos_alteradores", []))
+    return Norma(**item, correcoes_espaco=pares, artigos_alteradores=alteradores)
 
 
 def carregar(caminho: Path = MANIFESTO) -> Manifesto:
@@ -67,7 +69,12 @@ def sha256_bytes(dados: bytes) -> str:
 
 def parsear_norma(norma: Norma, dados: bytes) -> Resultado:
     """Parse de um HTML com o prefixo e as correções da norma."""
-    return parsear(decodificar(dados), norma.id_prefixo, norma.correcoes_espaco)
+    return parsear(
+        decodificar(dados),
+        norma.id_prefixo,
+        norma.correcoes_espaco,
+        norma.artigos_alteradores,
+    )
 
 
 def ler_arquivo(norma: Norma, raiz: Path = RAIZ) -> bytes:

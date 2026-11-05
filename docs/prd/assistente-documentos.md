@@ -109,6 +109,7 @@ Cada entrega tem um único responsável.
 | RF24 | Roteiro e gravação do vídeo, se Q1 escolher vídeo ou como material complementar | Lucas | M6 |
 | RF25 | Experimento de melhoria escolhido a partir dos erros medidos | Lucas | M7 |
 | RF26 | Medição de tempo manual contra assistente (seção 13.6) | Lucas | M7 |
+| RF27 | Artigos que alteram outra norma e trazem texto dela: lista explícita `artigos_alteradores` por norma em `normas.yaml` (na v1, `cdc.art110` a `cdc.art117` e `dec7962.art8`). Esses artigos não entram em `dados/trechos.jsonl` nem geram identificadores de dispositivo. Vão para `dados/trechos_alteradores.jsonl`, com texto literal, `cita_outra_norma: true` e `norma_citada`, preenchida só se o nome constar do próprio texto (senão `null`). Nenhuma aspa é acrescentada. O relatório de ingestão lista esses artigos e alerta sobre artigo fora da lista com marcador interno de artigo, parágrafo ou numeração fora de sequência. O verificador de atualização continua comparando esses artigos | dev | M1 |
 
 Textos fixos:
 - **Recusa:** "Não encontrei essa informação nas normas disponíveis."
@@ -206,6 +207,7 @@ Exemplos do tipo: "a loja está errada no meu caso?", "vou ganhar?", "devo proce
 - **CA5.** Em HTML de teste com texto tachado, artigo revogado e artigo vetado, nada disso chega aos trechos, e todos aparecem no relatório.
 - **CA6.** Os identificadores são únicos. Testes cobrem artigo com letra (por exemplo, 54-A), parágrafo único, ordinais e incisos. Nenhum trecho passa do limite, e toda parte de artigo dividido repete norma, artigo e caput.
 - **CA7.** O verificador de atualização relata artigo alterado em HTML de teste e não relata mudança em execução sem alteração.
+- **CA32.** Nenhum artigo de `artigos_alteradores` aparece em `dados/trechos.jsonl`, nem como trecho nem na lista de dispositivos, e todos aparecem em `dados/trechos_alteradores.jsonl` com os campos do RF27. Em HTML de teste, artigo fora da lista com linha citada de outra norma, mesmo sem aspas, gera alerta no relatório. Nenhuma referência de `perguntas_v1.jsonl` aponta para esses artigos.
 
 **Conjunto de perguntas**
 - **CA8.** O conjunto cumpre a composição da seção 13.2, com origem pública registrada em cada pergunta.
@@ -273,7 +275,8 @@ assistente-documentos/
   requirements.txt, .env.example, .gitignore, render.yaml
   .github/workflows/ci.yml                 dev
   normas.yaml                              dev
-  dados/brutos/, dados/trechos.jsonl       dev
+  dados/brutos/, dados/trechos.jsonl,
+              dados/trechos_alteradores.jsonl      dev
   comum/tipos.py                           dev (Trecho, Citacao, Resposta)
   ingestao/   coletar.py, parser.py,
               trechos.py, verificar.py     dev
@@ -383,7 +386,7 @@ As horas são estimativas minhas, a revisar no fim do M2. Lucas: **cerca de 45 a
 **Antes de ver as normas, Lucas faz L1.1 e L1.2**, pois essa ordem é parte do rigor da avaliação.
 - L1.1 Escolher fontes públicas de dúvidas e escrever as 60 perguntas em linguagem de consumidor.
 - L1.2 Fazer commit das perguntas sem referências.
-- **dev:** RF1 a RF5, com a conferência das normas no Planalto.
+- **dev:** RF1 a RF5 e RF27, com a conferência das normas no Planalto.
 - L1.3 Conferir os dispositivos sorteados (CA3).
 - L1.4 Escrever referências, com norma, dispositivo e trecho literal.
 - L1.5 Fazer a divisão dev e teste e congelar a versão.
@@ -462,7 +465,7 @@ Requer resposta a Q1.
 
 **Referências:**
 - Lucas localiza o dispositivo e registra a norma, o dispositivo, o trecho literal e uma resposta curta presa ao texto.
-- Cada pergunta só tem como referência o que o texto diz. Se a resposta depender de interpretação ou jurisprudência, ela é classificada como fora das normas.
+- Cada pergunta só tem como referência o que o texto diz. Se a resposta depender de interpretação ou jurisprudência, ela é classificada como fora das normas. Pergunta cuja única base seja texto de artigo alterador é classificada como fora das normas.
 
 **Reconferência sem segunda pessoa:**
 - Ao menos 12 referências sorteadas são refeitas às cegas, com intervalo mínimo de 7 dias.

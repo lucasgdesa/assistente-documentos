@@ -18,6 +18,17 @@ normas:
     tamanho: 172908
     ultima_alteracao_observada: Medida Provisória nº 1.393, de 2026 (art. 57, § 1º e § 2º); pode perder eficácia
     vigencia: Em vigor; texto compilado do Planalto na data de coleta
+    artigos_alteradores:
+      [
+        cdc.art110,
+        cdc.art111,
+        cdc.art112,
+        cdc.art113,
+        cdc.art114,
+        cdc.art115,
+        cdc.art116,
+        cdc.art117,
+      ]
   - sigla: Dec. 7.962
     id_prefixo: dec7962
     titulo: Decreto nº 7.962, de 15 de março de 2013 (comércio eletrônico)
@@ -32,6 +43,7 @@ normas:
     tamanho: 16831
     ultima_alteracao_observada: nenhuma indicada na página
     vigencia: Entra em vigor sessenta dias após a publicação no DOU de 15.3.2013 (art. 9º)
+    artigos_alteradores: [dec7962.art8]
     correcoes_espaco:
       - ["ante riores", "anteriores"]
       - ["recebimento d as demandas", "recebimento das demandas"]

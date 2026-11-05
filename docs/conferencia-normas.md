@@ -45,7 +45,7 @@ Sim, já aparece. O HTML traz 71 ocorrências de "Lei nº 14.181, de 2021", nas 
 - **Notas de redação.** As notas "(Redação dada ...)", "(Incluído ...)", "(Vide ...)", "(Vigência)" e "(Regulamento)" são links dentro do parágrafo. O parser tira essas notas do texto do trecho. As de alteração ficam no campo `vigencia`.
 - **Âncoras por artigo.** O CDC não tem âncoras por artigo no arquivo salvo (as ocorrências de `#artN` são links, não âncoras). O Decreto 7.962 tem `<a name="art1">` a `art9`. O Decreto 13.135 tem `<a name="art1">` a `art25`. O parser não depende de âncoras; usa o rótulo "Art." do texto.
 - **Variações de rótulo no CDC.** Ordinais aparecem como "º", "°", "§ 1 º", "§ 3 o", "§ 4.°" e artigos acima de 9 como "Art. 10.". Os rótulos são normalizados (`§ 3º`) no texto do trecho; o resto do texto não é alterado.
-- **Artigos de emenda.** Os arts. 110 a 117 do CDC e o art. 8º do Decreto 7.962 citam, entre aspas, dispositivos de outras normas. O parser mantém essas citações dentro do artigo que as traz e não as trata como dispositivos próprios.
+- **Artigos de emenda.** Os arts. 110 a 117 do CDC e o art. 8º do Decreto 7.962 citam dispositivos de outras normas, em geral entre aspas. Pelo RF27 eles estão listados em `artigos_alteradores` no `normas.yaml`, ficam fora de `dados/trechos.jsonl` e vão para `dados/trechos_alteradores.jsonl`, com o texto literal. No art. 113 do CDC as aspas aparecem só na abertura do primeiro parágrafo citado e no fim do último: faltam no próprio HTML (conferido no arquivo bruto), não foram perdidas pelo parser, e nenhuma aspa é acrescentada.
 
 ## Anomalias de texto
 
@@ -59,3 +59,15 @@ Sim, já aparece. O HTML traz 71 ocorrências de "Lei nº 14.181, de 2021", nas 
 - O texto dos trechos foi comparado com os próprios HTMLs salvos, não com o site no ar. A conferência de 15 dispositivos contra a página oficial (CA3) é do Lucas.
 - A situação atual da MP 1.393/2026 e a data exata da vigência do Decreto 13.135/2026 no DOU não foram confirmadas fora da página.
 - O Decreto 11.034/2022 só foi confirmado como revogado pelo art. 24 do Decreto 13.135 (a página dele não foi aberta).
+
+## Revisão do M1: notas e marcas
+
+- **Marcas de remoção.** Além de "(Revogado)" e "(Vetado)", o parser trata "(Suprimido)", "(Sem efeito)", "Sem efeito." e "(Declarado inconstitucional ...)" como remoção, e lista o dispositivo no relatório. Marca explícita é exigida: uma frase normal que apenas começa com "Revogado ..." continua no texto. Nota parcial (por exemplo "(Expressão declarada inconstitucional ...)") mantém o dispositivo e gera anomalia no relatório. Nenhuma dessas marcas existe nas três páginas reais; só a fixture fictícia as exercita.
+- **Notas de vigência.** As notas "Vide", "Vigência a partir de", "Produção de efeito" e o link "Vigência" não são mais descartadas: vão para o campo `vigencia` do trecho ("Notas do Planalto: ..."). Nota de vigência futura gera anomalia e troca o início do campo por "Vigência futura ou condicionada", para o trecho não aparecer como "Em vigor". Notas "Regulamento" continuam descartadas (são links para regulamentação, não para vigência). Notas de cabeçalho e notas soltas sem dispositivo ficam em "Ajustes de texto" do relatório.
+- **Casos reais.** Nas páginas reais só aparece o link "Vigência", em 3 trechos do CDC (art. 6º, duas partes, e art. 43). Os links apontam para o artigo de vigência da lei alteradora (Lei 12.741/2012, art. 6º; Lei 13.146/2015, art. 127), ambas anteriores à coleta. Não há nota de vigência futura nem de produção de efeito diferida. Por isso os trechos mantêm "Em vigor" e só ganham a nota registrada. O conteúdo desses artigos de vigência não foi lido.
+- **Alertas RF27.** Nas três normas reais, nenhum artigo fora de `artigos_alteradores` tem linha citada com marcador interno nem numeração de artigo ou de parágrafo fora de sequência (inclusive no Decreto 13.135).
+
+## Melhorias registradas (fora desta rodada)
+
+- **L2.** Notas por dispositivo: hoje o trecho só junta as notas de todos os seus dispositivos no campo `vigencia`. Não dá para saber a qual dispositivo cada nota pertence.
+- **L3.** Hierarquia no verificador: o verificador compara dispositivos, não títulos, capítulos e seções. Mudança só de hierarquia não é relatada.

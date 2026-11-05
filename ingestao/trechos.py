@@ -6,12 +6,34 @@ não usa relógio nem ordem de conjuntos.
 """
 
 import json
-from dataclasses import asdict
+import re
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from comum.tipos import Trecho
 from ingestao.coletar import Norma
-from ingestao.parser import Artigo, Dispositivo, Resultado
+from ingestao.parser import NOTA_FUTURA_RE, Artigo, Dispositivo, Resultado
+
+NORMA_CITADA_RE = re.compile(
+    r"(?:Lei Complementar|Lei|Decreto-Lei|Decreto|Medida Provisória)\s+"
+    r"n[º°o]?\.?[º°]?\s*[\d.]+(?:,\s*de\s+\d{1,2}º?\s+de\s+\w+\s+de\s+\d{4})?"
+)
+
+
+@dataclass(frozen=True)
+class TrechoAlterador:
+    """Artigo que altera outra norma e traz texto dela (RF27)."""
+
+    id: str
+    norma: str
+    artigo: str
+    texto: str  # literal, sem aspas acrescentadas
+    cita_outra_norma: bool
+    norma_citada: str | None  # só se o nome constar do próprio texto
+    hierarquia: tuple[str, ...]
+    vigencia: str
+    data_coleta: str
+    url: str
 
 
 def _tamanho(caput: Dispositivo, blocos: list[list[Dispositivo]]) -> int:
@@ -79,15 +101,55 @@ def dividir(artigo: Artigo, limite: int) -> list[list[list[Dispositivo]]]:
 
 
 def _vigencia(norma: Norma, blocos: list[list[Dispositivo]], caput: Dispositivo) -> str:
-    vistas: list[str] = []
+    alteracoes: list[str] = []
+    avisos: list[str] = []
     for d in [caput] + [d for b in blocos for d in b]:
-        for nota in d.notas:
+        for nota, destino in [(n, alteracoes) for n in d.notas] + [
+            (n, avisos) for n in d.avisos
+        ]:
             texto = nota.strip("()").strip()
-            if texto not in vistas:
-                vistas.append(texto)
-    if not vistas:
-        return norma.vigencia
-    return f"{norma.vigencia} | Alterações: {'; '.join(vistas)}"
+            if texto not in destino:
+                destino.append(texto)
+    base = norma.vigencia
+    if any(NOTA_FUTURA_RE.match(f"({a})") for a in avisos):
+        base = f"Vigência futura ou condicionada, ver nota; norma: {norma.vigencia}"
+    partes = [base]
+    if alteracoes:
+        partes.append(f"Alterações: {'; '.join(alteracoes)}")
+    if avisos:
+        partes.append(f"Notas do Planalto: {'; '.join(avisos)}")
+    return " | ".join(partes)
+
+
+def norma_citada(texto: str) -> str | None:
+    """Nome da norma alterada, se constar do enunciado (antes da primeira aspa)."""
+    enunciado = re.split(r'["“]', texto, maxsplit=1)[0]
+    nomes = {
+        re.sub(r"\s+", " ", m.group()) for m in NORMA_CITADA_RE.finditer(enunciado)
+    }
+    achados = sorted(nomes)
+    return achados[0] if len(achados) == 1 else None
+
+
+def gerar_alteradores(resultado: Resultado, norma: Norma) -> list[TrechoAlterador]:
+    saida: list[TrechoAlterador] = []
+    for artigo in resultado.alteradores:
+        caput = artigo.dispositivos[0]
+        saida.append(
+            TrechoAlterador(
+                id=artigo.id,
+                norma=norma.sigla,
+                artigo=artigo.numero,
+                texto=caput.texto,
+                cita_outra_norma=True,
+                norma_citada=norma_citada(caput.texto),
+                hierarquia=artigo.hierarquia,
+                vigencia=_vigencia(norma, [], caput),
+                data_coleta=norma.data_coleta,
+                url=norma.url,
+            )
+        )
+    return saida
 
 
 def gerar_trechos(
@@ -125,3 +187,10 @@ def escrever_jsonl(trechos: list[Trecho], caminho: Path) -> None:
     linhas = [json.dumps(asdict(t), ensure_ascii=False) for t in trechos]
     caminho.parent.mkdir(parents=True, exist_ok=True)
     caminho.write_text("\n".join(linhas) + "\n", encoding="utf-8", newline="\n")
+
+
+def escrever_alteradores(lista: list[TrechoAlterador], caminho: Path) -> None:
+    linhas = [json.dumps(asdict(t), ensure_ascii=False) for t in lista]
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    corpo = "\n".join(linhas) + "\n" if linhas else ""
+    caminho.write_text(corpo, encoding="utf-8", newline="\n")

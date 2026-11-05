@@ -75,7 +75,10 @@ def test_artigos_removidos_nao_viram_trechos():
         mantidos = {a.id for a in res.artigos}
         inteiros = {r.id for r in res.removidos if r.rotulo.startswith("Art.") and r.id}
         assert not (mantidos & inteiros)
-        assert len(mantidos) + len(inteiros) == len(res.artigos_detectados)
+        alteradores = {a.id for a in res.alteradores}
+        assert not (mantidos & alteradores)
+        total = len(mantidos) + len(inteiros) + len(alteradores)
+        assert total == len(res.artigos_detectados)
 
 
 def test_trechos_versionados_estao_em_dia(tmp_path):
@@ -87,6 +90,8 @@ def test_trechos_versionados_estao_em_dia(tmp_path):
     assert novo.read_bytes() == destino.read_bytes()
     relatorio = RAIZ / "dados" / "relatorio-ingestao.md"
     assert (tmp_path / "r.md").read_bytes() == Path(relatorio).read_bytes()
+    alt = "trechos_alteradores.jsonl"
+    assert (tmp_path / alt).read_bytes() == (RAIZ / "dados" / alt).read_bytes()
 
 
 def test_correcoes_de_espacamento_do_manifesto_foram_usadas():
@@ -95,3 +100,67 @@ def test_correcoes_de_espacamento_do_manifesto_foram_usadas():
         assert not any("sem efeito" in a for a in res.anomalias), norma.sigla
         usadas = [a for a in res.ajustes if a.startswith("espaçamento corrigido")]
         assert len(usadas) == len(norma.correcoes_espaco)
+
+
+def _forma_valida(prefixo: str) -> re.Pattern[str]:
+    letra = r"(?:-[a-z]{1,2})?"
+    return re.compile(
+        rf"^{re.escape(prefixo)}\.art\d+{letra}"
+        rf"(?:\.(?:par\d+{letra}|parunico))?"
+        rf"(?:\.inc\d+{letra})?(?:\.ali[a-z])?(?:\.parte\d+)?$"
+    )
+
+
+def test_todo_identificador_tem_prefixo_da_norma_e_forma_valida(trechos):
+    prefixos = {n.sigla: n.id_prefixo for n in MANIFESTO.normas}
+    for t in trechos:
+        padrao = _forma_valida(prefixos[t["norma"]])
+        assert padrao.match(t["id"]), t["id"]
+        for d in t["dispositivos"]:
+            assert padrao.match(d), d
+    for norma in MANIFESTO.normas:
+        res = coletar.parsear_norma(norma, coletar.ler_arquivo(norma, RAIZ))
+        padrao = _forma_valida(norma.id_prefixo)
+        for a in res.artigos:
+            for d in a.dispositivos:
+                assert padrao.match(d.id), d.id
+
+
+def test_alinea_sob_paragrafo_unico_do_cdc_tem_pai_valido(trechos):
+    soltas = [d for t in trechos for d in t["dispositivos"] if re.search(r"\.ali", d)]
+    assert soltas
+    assert not [d for d in soltas if "..ali" in d or d.endswith(".ali")]
+    assert any(".parunico.ali" in d for d in soltas)
+
+
+def test_ca32_alteradores_fora_dos_trechos_e_no_arquivo_proprio(tmp_path):
+    saida = tmp_path / "t.jsonl"
+    assert (
+        ingestao_main.executar(coletar.MANIFESTO, saida, tmp_path / "r.md", RAIZ) == 0
+    )
+    trechos = [json.loads(x) for x in saida.read_text(encoding="utf-8").splitlines()]
+    alt = [
+        json.loads(x)
+        for x in (tmp_path / "trechos_alteradores.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    listados = [a for n in MANIFESTO.normas for a in n.artigos_alteradores]
+    assert len(listados) == 9
+    assert [a["id"] for a in alt] == listados
+    for t in trechos:
+        assert t["id"].split(".parte")[0] not in listados
+        assert not (set(t["dispositivos"]) & set(listados))
+    for a in alt:
+        assert a["cita_outra_norma"] is True
+        assert a["norma_citada"] is None or a["norma_citada"][:3] in ("Lei", "Dec")
+        assert a["texto"].startswith("Art. ")
+        assert set(a) >= {"id", "norma", "artigo", "texto", "norma_citada"}
+
+
+def test_sem_alertas_rf27_nas_normas_reais():
+    for norma in MANIFESTO.normas:
+        res = coletar.parsear_norma(norma, coletar.ler_arquivo(norma, RAIZ))
+        assert not [a for a in res.anomalias if a.startswith("alerta RF27")], (
+            norma.sigla
+        )

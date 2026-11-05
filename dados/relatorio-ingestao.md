@@ -5,12 +5,12 @@ Limite de tamanho do trecho: 1500 caracteres.
 
 ## Resumo
 
-| Norma | Artigos no HTML | Artigos mantidos | Artigos removidos | Dispositivos mantidos | Dispositivos removidos | Trechos | Maior trecho |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| CDC | 130 | 118 | 12 | 429 | 43 | 131 | 1474 |
-| Dec. 7.962 | 9 | 9 | 0 | 35 | 0 | 9 | 1242 |
-| Dec. 13.135 | 25 | 25 | 0 | 104 | 0 | 25 | 1434 |
-| **Total** | **164** | **152** | **12** | **568** | **43** | **165** | **1474** |
+| Norma | Artigos no HTML | Artigos mantidos | Artigos alteradores | Artigos removidos | Dispositivos mantidos | Dispositivos removidos | Trechos | Maior trecho |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CDC | 130 | 110 | 8 | 12 | 421 | 43 | 123 | 1474 |
+| Dec. 7.962 | 9 | 8 | 1 | 0 | 34 | 0 | 8 | 1242 |
+| Dec. 13.135 | 25 | 25 | 0 | 0 | 104 | 0 | 25 | 1434 |
+| **Total** | **164** | **143** | **9** | **12** | **559** | **43** | **156** | **1474** |
 
 ## Páginas de origem
 
@@ -113,6 +113,36 @@ Total: 0 (nenhum).
 
 Total: 0 (nenhum).
 
+## Artigos alteradores (RF27)
+
+Artigos de `artigos_alteradores` ficam fora de `dados/trechos.jsonl` e vão para `dados/trechos_alteradores.jsonl`, sem identificadores de dispositivo.
+
+### CDC
+
+- cdc.art110 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+- cdc.art111 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+- cdc.art112 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+- cdc.art113 (norma citada: Lei n.° 7.347, de 24 de julho de 1985)
+- cdc.art114 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+- cdc.art115 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+- cdc.art116 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+- cdc.art117 (norma citada: Lei n° 7.347, de 24 de julho de 1985)
+
+Alertas RF27: 0
+
+### Dec. 7.962
+
+- dec7962.art8 (norma citada: Decreto nº 5.903, de 20 de setembro de 2006)
+
+Alertas RF27: 0
+
+### Dec. 13.135
+
+Nenhum artigo alterador listado.
+
+
+Alertas RF27: 0
+
 ## Verificações da estrutura
 
 ### CDC
@@ -120,7 +150,7 @@ Total: 0 (nenhum).
 - Lacunas na sequência de artigos: nenhuma
 - Trechos de artigos divididos (partes): 24
 - Identificadores de trecho repetidos: 0
-- Ajustes de texto: ordinal marcado como tachado mantido (x2)
+- Ajustes de texto: nota de cabeçalho (Capítulo VII): (Vide Lei nº 8.656, de 1993) (x1); nota sem dispositivo: (Incluído pela Lei nº 14.181, de 2021) (x2); ordinal marcado como tachado mantido (x2)
 - Anomalias: nenhuma
 
 ### Dec. 7.962

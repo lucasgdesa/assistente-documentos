@@ -15,7 +15,11 @@ RAIZ = coletar.RAIZ
 
 
 def executar(
-    manifesto_caminho: Path, saida: Path, caminho_relatorio: Path, raiz: Path = RAIZ
+    manifesto_caminho: Path,
+    saida: Path,
+    caminho_relatorio: Path,
+    raiz: Path = RAIZ,
+    saida_alteradores: Path | None = None,
 ) -> int:
     manifesto = coletar.carregar(manifesto_caminho)
     problemas = coletar.validar(manifesto, raiz)
@@ -26,17 +30,21 @@ def executar(
     dados: list[tuple[coletar.Norma, Resultado, list[Trecho]]] = []
     avisos: list[str] = []
     todos: list[Trecho] = []
+    alteradores: list[trechos.TrechoAlterador] = []
     for norma in manifesto.normas:
         res = coletar.parsear_norma(norma, coletar.ler_arquivo(norma, raiz))
         lista, aviso = trechos.gerar_trechos(res, norma, manifesto.limite_caracteres)
         dados.append((norma, res, lista))
         avisos.extend(f"{norma.sigla}: {a}" for a in aviso)
         todos.extend(lista)
+        alteradores.extend(trechos.gerar_alteradores(res, norma))
     ids = [t.id for t in todos]
     if len(ids) != len(set(ids)):
         print("identificadores de trecho repetidos", file=sys.stderr)
         return 1
     trechos.escrever_jsonl(todos, saida)
+    destino_alt = saida_alteradores or saida.with_name("trechos_alteradores.jsonl")
+    trechos.escrever_alteradores(alteradores, destino_alt)
     texto = relatorio.gerar(dados, manifesto.limite_caracteres, avisos)
     caminho_relatorio.parent.mkdir(parents=True, exist_ok=True)
     caminho_relatorio.write_text(texto, encoding="utf-8", newline="\n")

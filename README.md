@@ -25,6 +25,9 @@ tachado, revogado ou vetado:
   servidor.
 - `dados/trechos.jsonl`: trechos gerados (um artigo por trecho; artigo acima de
   1.500 caracteres é dividido entre parágrafos ou incisos, repetindo o caput).
+- `dados/trechos_alteradores.jsonl`: artigos que alteram outra norma e trazem
+  texto dela (lista `artigos_alteradores` em `normas.yaml`). Ficam fora de
+  `trechos.jsonl` e não geram identificadores de dispositivo.
 - `dados/relatorio-ingestao.md`: relatório gerado, com artigos processados,
   dispositivos removidos e páginas de origem. É a fonte das métricas do M1.
 - `docs/conferencia-normas.md`: o que foi conferido nas páginas (número, ementa,

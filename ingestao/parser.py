@@ -33,21 +33,36 @@ CABECALHO_RE = re.compile(
     r"(?P<n>[IVXLCDM]+(?:-[A-Z])?|ÚNICO)\b\s*(?P<r>.*)$",
     re.DOTALL,
 )
+_MARCAS_REMOCAO = (
+    r"Revogad[oa]|Vetad[oa]|Suprimid[oa]|Sem efeito|Declarad[oa] inconstitucional"
+)
 NOTA_RE = re.compile(
     r"\(\s*(?:Redação dada|Incluíd[oa]|Renumerad[oa]|Vide|Regulamento|Vigência|"
-    r"Produção de efeito|Expressão|Revogad[oa]|Vetad[oa])[^)]*\)",
+    r"Produção de efeito|Expressão|Declarad[oa]|Suprimid[oa]|Sem efeito|"
+    r"Revogad[oa]|Vetad[oa])[^)]*\)",
     re.IGNORECASE,
 )
 NOTA_ALTERACAO_RE = re.compile(
     r"^\(\s*(?:Redação dada|Incluíd[oa]|Renumerad[oa])", re.IGNORECASE
 )
-NOTA_REMOCAO_RE = re.compile(r"^\(\s*(?:Revogad[oa]|Vetad[oa])", re.IGNORECASE)
+NOTA_REMOCAO_RE = re.compile(rf"^\(\s*(?:{_MARCAS_REMOCAO})", re.IGNORECASE)
+NOTA_FUTURA_RE = re.compile(
+    r"^\(\s*(?:Vigência a partir|Vigência diferida|Produção de efeitos?)", re.IGNORECASE
+)
+NOTA_SUSPEITA_RE = re.compile(
+    r"revogad|suprimid|sem efeito|inconstitucion|suspens", re.IGNORECASE
+)
 LINK_SOLTO_RE = re.compile(r"(?:\s+(?:Vigência|Regulamento|Mensagem de veto))+\s*$")
 NOTA_EDITORIAL_RE = re.compile(
     r"^Dispositivo (?:incluído|transformado)\b", re.IGNORECASE
 )
+# corpo que é só a marca de remoção (com a origem, quando houver), não uma frase
 SO_REMOVIDO_RE = re.compile(
-    r"^(?:Revogad[oa]|Vetad[oa])\b[^.]{0,100}\.?$", re.IGNORECASE
+    r"^(?:(?:Revogad[oa]|Vetad[oa]|Suprimid[oa])"
+    r"(?:\s+(?:pel[oa]s?|por)\s+(?:Lei|Decreto|Medida|Emenda|Resolução|ADI)\b[^.;]{0,120})?"
+    r"|Sem efeito"
+    r"|Declarad[oa] inconstitucional\s+pel[oa]\s+[^.;]{0,150})\s*[.;]?$",
+    re.IGNORECASE,
 )
 ABRE_ASPAS = ("“", '"')
 FECHA_ASPAS_RE = re.compile(r"[”\"]\s*(?:\(NR\))?\s*\.?\s*$")
@@ -69,6 +84,7 @@ class Dispositivo:
     texto: str  # com o rótulo canônico, sem notas de redação
     grupo: str  # id do parágrafo ao qual pertence, ou o id do artigo (caput)
     notas: tuple[str, ...] = ()  # notas de alteração (Redação dada, Incluído)
+    avisos: tuple[str, ...] = ()  # outras notas: Vide, Vigência, Produção de efeito
 
 
 @dataclass(frozen=True)
@@ -91,6 +107,7 @@ class Removido:
 @dataclass
 class Resultado:
     artigos: list[Artigo] = field(default_factory=list)
+    alteradores: list[Artigo] = field(default_factory=list)
     removidos: list[Removido] = field(default_factory=list)
     anomalias: list[str] = field(default_factory=list)
     ajustes: list[str] = field(default_factory=list)
@@ -170,12 +187,31 @@ def _normalizar(texto: str) -> str:
 
 
 def _separar_notas(texto: str) -> tuple[str, list[str]]:
+    """Tira as notas do Planalto do texto. O link solto "Vigência" vira nota."""
     notas = [re.sub(r"\s+", " ", n).strip() for n in NOTA_RE.findall(texto)]
     limpo = re.sub(r"\s+", " ", NOTA_RE.sub(" ", texto)).strip()
+    solto = LINK_SOLTO_RE.search(limpo)
+    if solto and "Vigência" in solto.group() and "(Vigência)" not in notas:
+        notas.append("(Vigência)")
     limpo = LINK_SOLTO_RE.sub("", limpo)
     limpo = re.sub(r"\s+([,;:.])", r"\1", limpo)
     limpo = re.sub(r"([;:,])\s*\.$", r"\1", limpo)
     return limpo.strip(), notas
+
+
+def _motivo(remocao: str) -> str:
+    texto = remocao.lower()
+    if NOTA_EDITORIAL_RE.match(remocao):
+        return "nota_editorial"
+    for chave, motivo in (
+        ("vetad", "vetado"),
+        ("suprimid", "suprimido"),
+        ("sem efeito", "sem_efeito"),
+        ("inconstitucional", "inconstitucional"),
+    ):
+        if chave in texto:
+            return motivo
+    return "revogado"
 
 
 @dataclass
@@ -234,9 +270,28 @@ def _classificar(texto: str) -> _Classe:
     return _Classe("texto", resto=texto)
 
 
+def _dividir_notas(notas: list[str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Separa notas de alteração das demais notas que ficam como aviso."""
+    alteracoes = tuple(n for n in notas if NOTA_ALTERACAO_RE.match(n))
+    avisos = tuple(
+        n
+        for n in notas
+        if not NOTA_ALTERACAO_RE.match(n)
+        and not NOTA_REMOCAO_RE.match(n)
+        and not re.match(r"^\(\s*Regulamento", n, re.IGNORECASE)
+    )
+    return alteracoes, avisos
+
+
 class _Construtor:
-    def __init__(self, prefixo: str) -> None:
+    def __init__(self, prefixo: str, alteradores: frozenset[str] = frozenset()) -> None:
         self.prefixo = prefixo
+        self.alteradores = alteradores
+        self.alterador = False
+        self.ultimo_num: int | None = None
+        self.ultimo_chave = ""
+        self.ultimo_par = 0
+        self.alertados: set[str] = set()
         self.resultado = Resultado()
         self.hierarquia: dict[int, str] = {}
         self.artigo_id = ""
@@ -252,9 +307,13 @@ class _Construtor:
     def fechar_artigo(self) -> None:
         if self.artigo_id and self.disps:
             hier = tuple(self.hierarquia[k] for k in sorted(self.hierarquia))
-            self.resultado.artigos.append(
-                Artigo(self.artigo_id, self.artigo_numero, hier, tuple(self.disps))
-            )
+            artigo = Artigo(self.artigo_id, self.artigo_numero, hier, tuple(self.disps))
+            if self.alterador:
+                self.resultado.alteradores.append(artigo)
+            else:
+                self.resultado.artigos.append(artigo)
+        self.alterador = False
+        self.ultimo_par = 0
         self.artigo_id = self.artigo_numero = ""
         self.disps, self.ultimo, self.par_id, self.inc_id = [], None, "", ""
         self.bloqueio = None
@@ -262,8 +321,9 @@ class _Construtor:
     def definir_cabecalho(self, classe: _Classe) -> None:
         nivel = HIERARQUIA_NIVEL[classe.rotulo]
         numero = "único" if classe.chave == "ÚNICO" else classe.chave
-        nome, _ = _separar_notas(classe.resto)
+        nome, notas = _separar_notas(classe.resto)
         base = f"{classe.rotulo.capitalize()} {numero}"
+        self.registrar_notas_cabecalho(base, notas)
         self.fechar_artigo()
         for k in [k for k in self.hierarquia if k >= nivel]:
             del self.hierarquia[k]
@@ -274,10 +334,15 @@ class _Construtor:
         if self.cabecalho_aberto is None:
             return
         nivel, base = self.cabecalho_aberto
-        nome, _ = _separar_notas(texto)
+        nome, notas = _separar_notas(texto)
+        self.registrar_notas_cabecalho(base, notas)
         if nome:
             self.hierarquia[nivel] = f"{base} - {nome}"
             self.cabecalho_aberto = None
+
+    def registrar_notas_cabecalho(self, base: str, notas: list[str]) -> None:
+        for nota in notas:
+            self.resultado.ajustes.append(f"nota de cabeçalho ({base}): {nota}")
 
     def _novo_id(self, tipo: str, classe: _Classe) -> str:
         if tipo == "artigo":
@@ -286,7 +351,7 @@ class _Construtor:
             suf = "parunico" if classe.tipo == "unico" else f"par{classe.chave.lower()}"
             return f"{self.artigo_id}.{suf}"
         if tipo == "alinea":
-            return f"{self.inc_id}.ali{classe.chave}"
+            return f"{self.inc_id or self.par_id or self.artigo_id}.ali{classe.chave}"
         return f"{self.par_id or self.artigo_id}.inc{classe.chave}"
 
     def _remover(self, classe: _Classe, motivo: str, marca: str, disp_id: str) -> None:
@@ -307,9 +372,13 @@ class _Construtor:
             self.artigo_numero = classe.chave
             self.resultado.artigos_detectados.append(classe.chave)
             self.artigo_id = f"{self.prefixo}.art{classe.chave.lower()}"
+            self.alterador = self.artigo_id in self.alteradores
+            self._checar_sequencia_artigo(classe.chave)
         elif not self.artigo_id:
             self.resultado.anomalias.append(f"dispositivo sem artigo: {classe.rotulo}")
             return
+        if classe.tipo == "paragrafo" and "-" not in classe.chave:
+            self._checar_sequencia_paragrafo(int(classe.chave))
         disp_id = self._novo_id(tipo, classe)
         if disp_id in self.ids:
             raise ErroParser(f"identificador duplicado: {disp_id}")
@@ -325,44 +394,88 @@ class _Construtor:
         if not remocao and NOTA_EDITORIAL_RE.match(corpo):
             remocao = corpo  # anotação do Planalto no lugar do texto
         if remocao:
-            motivo = (
-                "vetado" if re.search(r"vetad", remocao, re.IGNORECASE) else "revogado"
-            )
-            if NOTA_EDITORIAL_RE.match(remocao):
-                motivo = "nota_editorial"
-            self._remover(classe, motivo, remocao, disp_id)
+            self._remover(classe, _motivo(remocao), remocao, disp_id)
             self.bloqueio = nivel
             if tipo == "artigo":
                 self.artigo_id, self.disps, self.ultimo = "", [], None
+                self.alterador = False
             return
         for n in notas:
-            if re.search(r"revogad", n, re.IGNORECASE) and not NOTA_ALTERACAO_RE.match(
-                n
-            ):
-                msg = f"{disp_id}: nota de revogação parcial, dispositivo mantido: {n}"
+            if NOTA_FUTURA_RE.match(n):
+                msg = f"{disp_id}: nota de vigência futura ou condicionada: {n}"
                 self.resultado.anomalias.append(msg)
-        alteracoes = tuple(n for n in notas if NOTA_ALTERACAO_RE.match(n))
+            if NOTA_SUSPEITA_RE.search(n) and not NOTA_ALTERACAO_RE.match(n):
+                msg = f"{disp_id}: nota de remoção parcial, dispositivo mantido: {n}"
+                self.resultado.anomalias.append(msg)
+        alteracoes, avisos = _dividir_notas(notas)
         texto = f"{classe.prefixo} {corpo}".strip()
         grupo = self.par_id if (tipo != "artigo" and self.par_id) else self.artigo_id
         self.disps.append(
-            Dispositivo(disp_id, tipo, classe.rotulo, texto, grupo, alteracoes)
+            Dispositivo(disp_id, tipo, classe.rotulo, texto, grupo, alteracoes, avisos)
         )
         self.ultimo = len(self.disps) - 1
 
     def continuar(self, texto: str) -> None:
-        if self.bloqueio is not None or self.ultimo is None:
+        if self.bloqueio is not None:
             return
         corpo, notas = _separar_notas(texto)
+        if self.ultimo is None:
+            for n in notas:
+                self.resultado.ajustes.append(f"nota sem dispositivo: {n}")
+            return
         atual = self.disps[self.ultimo]
-        extra = tuple(n for n in notas if NOTA_ALTERACAO_RE.match(n))
-        if any(NOTA_REMOCAO_RE.match(n) for n in notas):
-            self.resultado.anomalias.append(
-                f"{atual.id}: nota de remoção em continuação"
-            )
+        alteracoes, avisos = _dividir_notas(notas)
+        for n in notas:
+            if NOTA_REMOCAO_RE.match(n) or NOTA_FUTURA_RE.match(n):
+                msg = f"{atual.id}: nota de remoção ou vigência em continuação: {n}"
+                self.resultado.anomalias.append(msg)
         novo = f"{atual.texto}\n{corpo}" if corpo else atual.texto
         self.disps[self.ultimo] = Dispositivo(
-            atual.id, atual.tipo, atual.rotulo, novo, atual.grupo, atual.notas + extra
+            atual.id,
+            atual.tipo,
+            atual.rotulo,
+            novo,
+            atual.grupo,
+            atual.notas + alteracoes,
+            atual.avisos + avisos,
         )
+
+    def alertar(self, chave: str, mensagem: str) -> None:
+        if chave not in self.alertados:
+            self.alertados.add(chave)
+            self.resultado.anomalias.append(f"alerta RF27: {mensagem}")
+
+    def _checar_sequencia_artigo(self, chave: str) -> None:
+        num = int(chave.partition("-")[0])
+        anterior = self.ultimo_num
+        if anterior is not None and num not in (anterior, anterior + 1):
+            self.alertar(
+                f"seq-art-{chave}",
+                f"numeração de artigo fora de sequência: art. {chave} "
+                f"após art. {self.ultimo_chave}",
+            )
+        self.ultimo_num, self.ultimo_chave = num, chave
+
+    def _checar_sequencia_paragrafo(self, numero: int) -> None:
+        if numero != self.ultimo_par + 1:
+            self.alertar(
+                f"seq-par-{self.artigo_id}-{numero}",
+                f"numeração de parágrafo fora de sequência em {self.artigo_id}: "
+                f"§ {numero} após § {self.ultimo_par}",
+            )
+        self.ultimo_par = numero
+
+    def linha_citada(self, texto: str) -> None:
+        """Alerta se uma linha citada (entre aspas ou em citação) traz marcador."""
+        if self.alterador or not self.artigo_id:
+            return
+        interno = _classificar(texto.lstrip('"“ '))
+        if interno.tipo in ("artigo", "paragrafo", "unico"):
+            self.alertar(
+                f"citada-{self.artigo_id}",
+                f"{self.artigo_id} traz linha citada de outra norma com marcador "
+                f"de {interno.rotulo}, fora de artigos_alteradores",
+            )
 
     def tachado(self, struck: str, artigo_vivo: str = "") -> None:
         texto = _normalizar(struck)
@@ -393,17 +506,22 @@ def _fora_de_paragrafo(sopa: BeautifulSoup) -> list[str]:
 
 
 def parsear(
-    html: str, prefixo: str, correcoes: tuple[tuple[str, str], ...] = ()
+    html: str,
+    prefixo: str,
+    correcoes: tuple[tuple[str, str], ...] = (),
+    alteradores: tuple[str, ...] = (),
 ) -> Resultado:
     """Extrai artigos e dispositivos do HTML (texto já decodificado).
 
     `correcoes` são pares (de, para) de espaçamento quebrado pela serialização
     do HTML (palavra partida em duas). Cada uso entra em `ajustes`; par que não
-    é encontrado entra em `anomalias`.
+    é encontrado entra em `anomalias`. `alteradores` são os ids dos artigos que
+    alteram outra norma e trazem o texto dela (RF27): ficam em `alteradores`, sem
+    identificadores de dispositivo.
     """
     sopa = BeautifulSoup(html, "lxml")
     classes = _classes_tachadas(sopa)
-    c = _Construtor(prefixo)
+    c = _Construtor(prefixo, frozenset(alteradores))
     res = c.resultado
     res.anomalias.extend(
         f"texto fora de parágrafo: {x}" for x in _fora_de_paragrafo(sopa)
@@ -447,6 +565,9 @@ def parsear(
                 em_citacao = FECHA_ASPAS_RE.search(texto[1:]) is None
             elif em_citacao and FECHA_ASPAS_RE.search(texto):
                 em_citacao = False
+            c.linha_citada(texto)
+            c.continuar(texto)
+        elif c.alterador and classe.tipo not in ("artigo", "cabecalho"):
             c.continuar(texto)
         elif classe.tipo == "cabecalho":
             c.definir_cabecalho(classe)
@@ -457,6 +578,12 @@ def parsear(
         else:
             c.adicionar(classe)
     c.fechar_artigo()
+    achados = {a.id for a in res.alteradores}
+    res.anomalias.extend(
+        f"alerta RF27: artigo alterador listado e não encontrado: {a}"
+        for a in alteradores
+        if a not in achados
+    )
     res.anomalias.extend(
         f"correção de espaçamento sem efeito: '{de}'"
         for de, _ in correcoes

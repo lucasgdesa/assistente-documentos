@@ -36,7 +36,11 @@ class Diferencas:
 
 
 def _indexar(res: Resultado) -> dict[str, tuple[str, tuple[str, ...]]]:
-    return {d.id: (d.texto, d.notas) for a in res.artigos for d in a.dispositivos}
+    return {
+        d.id: (d.texto, d.notas)
+        for a in res.artigos + res.alteradores
+        for d in a.dispositivos
+    }
 
 
 def comparar(antigo: Resultado, novo: Resultado) -> Diferencas:

@@ -29,7 +29,8 @@ def montar_projeto(tmp_path: Path) -> Path:
         '    sha256: "0"\n'
         "    tamanho: 0\n"
         "    ultima_alteracao_observada: nenhuma\n"
-        "    vigencia: fictícia\n",
+        "    vigencia: fictícia\n"
+        "    artigos_alteradores: [fic.art11]\n",
         encoding="utf-8",
     )
     assert coletar.registrar(manifesto, tmp_path) == []
@@ -105,3 +106,28 @@ def test_comparar_resultados_iguais_nao_tem_diferencas():
     res = parsear(decodificar(FIXTURE.read_bytes()), "fic")
     assert verificar.comparar(res, res).vazio
     assert norma_teste().sigla == "FIC"
+
+
+def test_ca7_artigo_novo_no_fim_da_norma_e_relatado(tmp_path, capsys):
+    manifesto = montar_projeto(tmp_path)
+    novo = novo_arquivo(
+        tmp_path,
+        "<p>Brasília, 1 de janeiro de 2000.</p>",
+        "<p>Art. 55. Texto fictício de artigo novo.</p>"
+        "<p>Brasília, 1 de janeiro de 2000.</p>",
+    )
+    codigo = verificar.main(["fic", str(novo), "--manifesto", str(manifesto)])
+    saida = capsys.readouterr().out
+    assert codigo == 1
+    assert "Dispositivos novos (1)" in saida and "fic.art55" in saida
+    assert "Artigos afetados: art55" in saida
+
+
+def test_ca7_artigo_alterador_continua_sendo_comparado(tmp_path, capsys):
+    manifesto = montar_projeto(tmp_path)
+    novo = novo_arquivo(
+        tmp_path, "Texto citado de outra norma fictícia.", "Texto citado mudado."
+    )
+    codigo = verificar.main(["fic", str(novo), "--manifesto", str(manifesto)])
+    assert codigo == 1
+    assert "fic.art11" in capsys.readouterr().out

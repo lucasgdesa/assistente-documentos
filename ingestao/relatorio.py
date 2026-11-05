@@ -6,10 +6,18 @@ from collections import Counter
 from comum.tipos import Trecho
 from ingestao.coletar import Norma
 from ingestao.parser import Resultado
+from ingestao.trechos import gerar_alteradores
 
 CABECALHO_RESUMO = (
-    "| Norma | Artigos no HTML | Artigos mantidos | Artigos removidos | "
+    "| Norma | Artigos no HTML | Artigos mantidos | Artigos alteradores | "
+    "Artigos removidos | "
     "Dispositivos mantidos | Dispositivos removidos | Trechos | Maior trecho |"
+)
+
+
+TEXTO_ALTERADORES = (
+    "Artigos de `artigos_alteradores` ficam fora de `dados/trechos.jsonl` e vão para "
+    "`dados/trechos_alteradores.jsonl`, sem identificadores de dispositivo."
 )
 
 
@@ -52,9 +60,9 @@ def gerar(
         "## Resumo",
         "",
         CABECALHO_RESUMO,
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    totais = [0] * 7
+    totais = [0] * 8
     for norma, res, trechos in dados:
         inteiros = sum(
             1
@@ -66,6 +74,7 @@ def gerar(
         linha = [
             len(res.artigos_detectados),
             len(res.artigos),
+            len(res.alteradores),
             inteiros,
             mantidos,
             len(res.removidos),
@@ -73,7 +82,7 @@ def gerar(
         ]
         for i, v in enumerate(linha):
             totais[i] += v
-        totais[6] = max(totais[6], maior)
+        totais[7] = max(totais[7], maior)
         linhas.append(
             f"| {norma.sigla} | " + " | ".join(str(v) for v in linha) + f" | {maior} |"
         )
@@ -115,6 +124,21 @@ def gerar(
                     f"| {r.id or '-'} | {_celula(r.rotulo)} | {r.motivo} | {r.artigo} | {_celula(r.marca)[:120]} |"
                 )
             linhas.append("")
+    linhas += ["## Artigos alteradores (RF27)", ""]
+    linhas += [
+        TEXTO_ALTERADORES,
+        "",
+    ]
+    for norma, res, _ in dados:
+        citadas = {t.id: t.norma_citada for t in gerar_alteradores(res, norma)}
+        linhas += [f"### {norma.sigla}", ""]
+        if not citadas:
+            linhas += ["Nenhum artigo alterador listado.", ""]
+        for id_alt, citada in citadas.items():
+            linhas.append(f"- {id_alt} (norma citada: {citada or 'não identificada'})")
+        alertas = [a for a in res.anomalias if a.startswith("alerta RF27")]
+        linhas += ["", f"Alertas RF27: {len(alertas)}"]
+        linhas += [f"- {_celula(a)}" for a in alertas] + [""]
     linhas += ["## Verificações da estrutura", ""]
     for norma, res, trechos in dados:
         buracos = lacunas(res.artigos_detectados)
