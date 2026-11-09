@@ -13,8 +13,7 @@ advogado ou Procon.
 Existem os tipos compartilhados (`comum/tipos.py`), o contrato do núcleo
 (`comum/contrato.py`), a ingestão das três normas (`ingestao/`), testes e CI.
 Ainda não há busca nem resposta (`rag/` e `avaliacao/` são do Lucas). As 60
-perguntas de avaliação estão em `avaliacao/perguntas_v1.jsonl`, ainda sem
-referências.
+perguntas de avaliação, com gabarito, estão em `avaliacao/perguntas_v1.jsonl`.
 
 A ingestão transforma os HTMLs oficiais em trechos por artigo, sem texto
 tachado, revogado ou vetado:
@@ -92,3 +91,10 @@ consultar as normas coletadas, mas o Claude conhece o Código de Defesa do
 Consumidor, o que pode aproximar os temas do que a lei cobre. As perguntas com
 `origem` `rascunho-claude` não vêm de uma reclamação específica, e `url_origem`
 aponta para a lista de reclamações da empresa, não para a reclamação exata.
+
+As referências (gabarito) também foram rascunhadas pelo Claude, a pedido do Lucas,
+usando só o texto das normas em `dados/trechos.jsonl`. Um verificador independente,
+outro modelo, revisou em duas rodadas: 0 erro grave, 3 erros e 32 ajustes, todos
+corrigidos. Lucas revisou o resultado e aprovou. Ninguém envolvido tem formação
+jurídica, então o gabarito não substitui revisão profissional. A reconferência
+cega de 12 referências, feita por Lucas após 7 dias, fica registrada à parte.

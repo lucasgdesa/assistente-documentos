@@ -186,9 +186,12 @@ Cada dispositivo tem um identificador canônico gerado na ingestão, por exemplo
 Exemplos do tipo: "a loja está errada no meu caso?", "vou ganhar?", "devo processar?".
 
 - O modelo sinaliza `CASO_PESSOAL` no início da saída, e o código remove o sinal e acrescenta a nota fixa.
+- **Texto da nota fixa (2026-11-09):** "Não posso avaliar o seu caso nem dizer o que você deve fazer. Posso mostrar apenas o que as normas dizem em termos gerais." Ela não encaminha a órgãos nem profissionais, porque isso seria recomendação de ação.
 - Se houver regra nos trechos, a resposta apresenta somente a regra geral, com citação.
 - A resposta não conclui quem tem razão, não prevê resultado, não calcula prazo do caso concreto e não recomenda ação.
-- Se o pedido for apenas uma recomendação, ou não houver regra nos trechos, sai somente a nota fixa ou a recusa.
+- **Alteração de 2026-11-09:** se o pedido for apenas uma recomendação e não houver regra diretamente aplicável ao que se pergunta, sai somente a nota fixa. Se não houver regra nos trechos, sai a recusa.
+- No gabarito, a referência desses pedidos é apenas a nota fixa (q054, q058 e q059). Nos demais casos pessoais, a referência é a regra geral, sem conclusão, previsão ou recomendação.
+- Casos pessoais têm `respondivel: false` e não entram em Hit@5, MRR, acurácia nem citação correta. São medidos pela "Conduta em caso pessoal" (13.3).
 
 ### Rotas
 | Rota | Função |
@@ -210,7 +213,7 @@ Exemplos do tipo: "a loja está errada no meu caso?", "vou ganhar?", "devo proce
 - **CA32.** Nenhum artigo de `artigos_alteradores` aparece em `dados/trechos.jsonl`, nem como trecho nem na lista de dispositivos, e todos aparecem em `dados/trechos_alteradores.jsonl` com os campos do RF27. Em HTML de teste, artigo fora da lista com linha citada de outra norma, mesmo sem aspas, gera alerta no relatório. Nenhuma referência de `perguntas_v1.jsonl` aponta para esses artigos. Limitação: citação sem aspas e em sequência perfeita não gera alerta, então cada novo HTML exige conferência manual da lista `artigos_alteradores`.
 
 **Conjunto de perguntas**
-- **CA8.** O conjunto cumpre a composição da seção 13.2, com origem pública registrada em cada pergunta.
+- **CA8.** Pelo campo `tipo` escrito, o conjunto tem 25 diretas, 12 difíceis, 13 fora das normas e 10 casos pessoais, com origem pública registrada em cada pergunta. As divisões dev e teste seguem a contagem por desfecho da seção 13.2.
 - **CA9.** O histórico do Git mostra as 60 perguntas em commit anterior ao commit das referências.
 - **CA10.** A reconferência cega foi feita em ao menos 12 referências e 12 notas, com intervalo mínimo de 7 dias, e a concordância está publicada.
 
@@ -236,7 +239,7 @@ Exemplos do tipo: "a loja está errada no meu caso?", "vou ganhar?", "devo proce
 - **CA25.** Os avisos aparecem na tela inicial, e o aviso jurídico aparece em toda resposta.
 
 **Publicação e autoria**
-- **CA26.** Antes de publicar a demo ou o vídeo, a divisão dev tem no máximo 1 erro grave em 25 perguntas respondíveis, 100% de citações válidas, nenhuma citação de dispositivo revogado e nenhuma conclusão ou recomendação em casos pessoais.
+- **CA26.** Antes de publicar a demo ou o vídeo, a divisão dev tem no máximo 1 erro grave em 20 perguntas com `respondivel: true`, 100% de citações válidas, nenhuma citação de dispositivo revogado e nenhuma conclusão ou recomendação em casos pessoais.
 - **CA27.** A divisão de teste foi executada nas tags v0.3 e v1.0, e os resultados estão publicados mesmo que abaixo das metas.
 - **CA28.** Nenhum commit que altera `rag/` ou `avaliacao/` tem o trailer `Autor-agente: dev`. Commits do dev sempre levam esse trailer. Exceção declarada: o commit de `avaliacao/perguntas_v1.jsonl` leva `Rascunho-por: Claude` e `Revisado-por: Lucas` (seção 13.1).
 - **CA29.** O README contém tudo que a seção 15 lista como obrigatório, incluindo a frase de que não houve validação com usuários externos.
@@ -465,39 +468,45 @@ Requer resposta a Q1.
 - São escritas em linguagem de consumidor e **antes de consultar a norma**, com commit próprio. Esse commit é a prova da ordem (CA9).
 
 **Referências:**
-- Lucas localiza o dispositivo e registra a norma, o dispositivo, o trecho literal e uma resposta curta presa ao texto.
+- **Alteração de 2026-11-09:** a pedido do Lucas, as referências foram rascunhadas pelo Claude. Um verificador independente as revisou em duas rodadas: na primeira, 0 erro grave, 3 erros e 23 ajustes; na segunda, 9 ajustes restantes. Todos foram corrigidos. Em seguida, Lucas revisa item a item. Cada referência registra a norma, o dispositivo, o trecho literal e uma resposta curta presa ao texto.
+- O campo `tipo` fica congelado como foi escrito, pois faz parte da prova de ordem (CA9). O desfecho do gabarito fica em `respondivel`, e a divergência entre tipo e desfecho é explicada em `observacao_tipo`. Exemplo: q025, q027, q029, q032 e q033 foram escritas como diretas ou difíceis, mas o texto das normas não as responde.
 - Cada pergunta só tem como referência o que o texto diz. Se a resposta depender de interpretação ou jurisprudência, ela é classificada como fora das normas. Pergunta cuja única base seja texto de artigo alterador é classificada como fora das normas.
 
 **Reconferência sem segunda pessoa:**
 - Ao menos 12 referências sorteadas são refeitas às cegas, com intervalo mínimo de 7 dias.
 - Ao menos 12 notas sorteadas são refeitas da mesma forma.
 - Publica-se a concordância e toda correção feita.
-- **Limitação declarada:** essa é uma verificação do mesmo autor, sem formação jurídica. Ela detecta inconsistência, mas não substitui revisão independente.
+- A reconferência cega das 12 referências fica com Lucas.
+- **Limitação declarada:** nenhum dos revisores tem formação jurídica, e a revisão independente foi feita por outro modelo, não por uma pessoa. A reconferência detecta inconsistência, mas não substitui revisão jurídica.
 
 **Formato (JSONL):**
 ```json
 {"id": "q001", "pergunta": "...", "tipo": "direta", "origem": "procon",
  "url_origem": "...", "respondivel": true, "resposta_referencia": "...",
- "fontes": [["cdc.art49", "dec7962.art5"]], "literal": "...", "divisao": "dev"}
+ "fontes": [["cdc.art49", "dec7962.art5"]], "fontes_opcionais": [], "fontes_contexto": [],
+ "observacao_tipo": null, "literal": "...", "divisao": "dev"}
 ```
 
 Em `fontes`, cada lista interna é um grupo de alternativas: um item do grupo basta. Todos os grupos precisam ser atendidos. No exemplo fictício acima, qualquer um dos dois dispositivos serviria.
 
+**Alteração de 2026-11-09:** `fontes_contexto` lista dispositivos que a resposta deve respeitar, mas que não entram em Hit@5, MRR nem citação correta. No gabarito, esse campo traz `dec13135.art1.parunico`, que limita o alcance do Dec. 13.135. `fontes_opcionais` lista dispositivos que complementam a resposta e cujo texto pode aparecer no literal, mas que não são exigidos: citar um deles não penaliza, e omitir também não. O campo `respondivel` guarda o desfecho do gabarito. O campo `observacao_tipo` explica quando o desfecho diverge do tipo escrito.
+
 ### 13.2 Composição
 
-| Tipo | Total | Dev | Teste |
+**Alteração de 2026-11-09.** A composição planejada, pelo `tipo` escrito e congelado, foi de 25 diretas, 12 difíceis, 13 fora das normas e 10 casos pessoais, com 37 respondíveis previstas. No gabarito, 5 diretas ou difíceis não são respondidas pelas normas: q025, q027, q029, q032 e q033. A composição efetiva, pelo desfecho, ficou assim:
+
+| Desfecho | Total | Dev | Teste |
 | --- | --- | --- | --- |
-| Direta (um dispositivo responde) | 25 | 17 | 8 |
-| Difícil (linguagem distante, vários dispositivos, mais de uma norma) | 12 | 8 | 4 |
-| Fora das normas (parecida com tema coberto, setorial, jurisprudência) | 13 | 9 | 4 |
-| Caso pessoal ou pedido de recomendação | 10 | 6 | 4 |
+| Respondível (`respondivel: true`) | 32 | 20 | 12 |
+| Fora das normas (`respondivel: false`, tipo diferente de `caso_pessoal`) | 18 | 14 | 4 |
+| Caso pessoal (`tipo: caso_pessoal`, `respondivel: false`) | 10 | 6 | 4 |
 | **Total** | **60** | **40** | **20** |
 
-São 37 perguntas respondíveis: 25 em dev e 12 em teste. Casos pessoais têm métrica própria.
+O sorteio dev e teste é estratificado pelo desfecho, com cotas fixas, e a semente será registrada no repositório. As métricas por tipo escrito continuam relatadas à parte.
 
 ### 13.3 Métricas e metas iniciais
 
-As metas são hipóteses, a recalibrar uma única vez depois da linha de base da v0.2. As metas da v1.0 valem para a divisão de teste. O número medido é publicado mesmo se ficar abaixo da meta. A busca usa as perguntas respondíveis.
+As metas são hipóteses, a recalibrar uma única vez depois da linha de base da v0.2. As metas da v1.0 valem para a divisão de teste. O número medido é publicado mesmo se ficar abaixo da meta. **Alteração de 2026-11-09:** as métricas usam o desfecho. Hit@5, MRR, acurácia, erro grave e citação correta usam as perguntas com `respondivel: true`. `fontes_contexto` não entra em Hit@5, MRR nem citação correta.
 
 | Métrica | Definição | Medição | Meta v1.0 |
 | --- | --- | --- | --- |
@@ -510,16 +519,26 @@ As metas são hipóteses, a recalibrar uma única vez depois da linha de base da
 | Citação de revogado | Citações a dispositivo revogado ou vetado | Automática | 0 |
 | Citação correta por artigo | Respondidas em que as citações atendem aos grupos de `fontes`, ou em que Lucas registra que o artigo citado sustenta a resposta | Automática e humana | ≥ 0,85 |
 | Citação correta por dispositivo | Igual, no nível do parágrafo ou inciso | Automática e humana | ≥ 0,70 |
-| Recusa correta | Recusadas / fora das normas | Automática | ≥ 0,80 |
-| Falsa recusa | Recusadas / respondíveis | Automática | ≤ 10% |
+| Recusa correta | Recusadas / perguntas com `respondivel: false` e tipo diferente de `caso_pessoal` | Automática | ≥ 0,80 |
+| Falsa recusa | Recusadas / perguntas com `respondivel: true` | Automática | ≤ 10% |
 | Conduta em caso pessoal | Respostas sem conclusão, previsão ou recomendação / casos pessoais | Humana | 100% |
 | Latência | p50 e p95 | Automática | p95 ≤ 8 s |
 | Custo | Custo médio por pergunta | Automática | ≤ US$ 0,0005 |
 | Tempo até a resposta | Seção 13.6 | Manual | Mediana com assistente ≤ 50% da manual |
 
+**Nota sobre o tamanho (2026-11-09):** no teste, com 12 respondíveis, 4 fora e 4 casos, as metas equivalem a contagens inteiras:
+- Hit@5 ≥ 0,80 exige 10 de 12.
+- Acurácia ≥ 0,75 exige 9 de 12.
+- Falsa recusa ≤ 10% admite 1 de 12.
+- Erro grave ≤ 5% admite 0 de 12.
+- Recusa correta ≥ 0,80 exige 4 de 4, e cada pergunta vale 25 pontos.
+- Conduta em caso pessoal exige 4 de 4.
+
+Esses números são sinais fracos e devem ser publicados com a contagem bruta ao lado.
+
 **Rubrica:**
 - **Certa:** responde corretamente, sem informação falsa.
-- **Parcial:** correta, mas omite algo necessário.
+- **Parcial:** correta, mas omite algo necessário. Também conta como parcial a resposta que aplica regra do Dec. 13.135 sem ressalvar o alcance dado por `dec13135.art1.parunico` (alteração de 2026-11-09).
 - **Errada:** incorreta ou sem sustentação na norma.
 - **Erro grave:** resposta errada apresentada como fato sobre direito, prazo, valor ou obrigação, capaz de prejudicar quem confiar nela.
 
@@ -529,13 +548,14 @@ Em pergunta respondível, uma recusa conta como falsa recusa, e não como erro g
 - **Dev:** usada para explorar, ajustar o limiar e analisar erros.
 - **Teste:** usada apenas nas tags v0.3 e v1.0, sem ajuste a partir dos erros individuais.
 - Cada mudança de limiar, prompt ou modelo acontece somente com a divisão dev.
+- A divisão segue a seção 13.2: teste com 12 respondíveis, 4 fora das normas e 4 casos pessoais; dev com 20, 14 e 6. Uma vez sorteada, a divisão não muda (alteração de 2026-11-09).
 
 ### 13.5 Comparação entre versões
 - Só se comparam versões com a mesma versão de perguntas, normas e rubrica.
 - Se o conjunto ou as normas mudarem, a versão anterior é reexecutada antes da comparação.
 - `perguntas_v1.jsonl` não muda. Correções de erro de referência são registradas e reaplicadas às versões anteriores.
 - Uma mudança só é declarada melhora se ganhar ao menos 3 perguntas líquidas na divisão dev e não criar erro grave novo. É uma regra prática, não um teste estatístico.
-- A margem de erro é publicada: com 80% de acerto, a margem de 95% é cerca de ±16 pontos com 25 perguntas e ±23 pontos com 12.
+- A margem de erro é publicada: com 80% de acerto, a margem de 95% é cerca de ±18 pontos com 20 perguntas e ±23 pontos com 12.
 - A busca roda sem custo. A geração é reexecutada apenas quando busca, prompt, limiar ou modelo mudam.
 
 ### 13.6 Valor: tempo manual contra assistente
