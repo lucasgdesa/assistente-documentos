@@ -12,7 +12,9 @@ advogado ou Procon.
 
 Existem os tipos compartilhados (`comum/tipos.py`), o contrato do núcleo
 (`comum/contrato.py`), a ingestão das três normas (`ingestao/`), testes e CI.
-Ainda não há busca nem resposta (`rag/` e `avaliacao/` são do Lucas).
+Ainda não há busca nem resposta (`rag/` e `avaliacao/` são do Lucas). As 60
+perguntas de avaliação estão em `avaliacao/perguntas_v1.jsonl`, ainda sem
+referências.
 
 A ingestão transforma os HTMLs oficiais em trechos por artigo, sem texto
 tachado, revogado ou vetado:
@@ -81,3 +83,12 @@ Os testes não usam chave de API.
 O código de `rag/` e `avaliacao/` é escrito à mão por Lucas. O restante é feito
 com agentes de IA e revisado. Commits feitos pelo agente dev levam o trailer
 `Autor-agente: dev`; nenhum commit que altere `rag/` ou `avaliacao/` o tem.
+
+Exceção declarada: as 60 perguntas de `avaliacao/perguntas_v1.jsonl` foram
+rascunhadas pelo Claude, a pedido do Lucas, a partir de títulos de reclamações
+públicas do Reclame Aqui, e revisadas e aprovadas por ele. O commit leva os
+trailers `Rascunho-por: Claude` e `Revisado-por: Lucas`. Elas foram escritas sem
+consultar as normas coletadas, mas o Claude conhece o Código de Defesa do
+Consumidor, o que pode aproximar os temas do que a lei cobre. As perguntas com
+`origem` `rascunho-claude` não vêm de uma reclamação específica, e `url_origem`
+aponta para a lista de reclamações da empresa, não para a reclamação exata.

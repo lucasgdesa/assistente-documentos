@@ -238,7 +238,7 @@ Exemplos do tipo: "a loja está errada no meu caso?", "vou ganhar?", "devo proce
 **Publicação e autoria**
 - **CA26.** Antes de publicar a demo ou o vídeo, a divisão dev tem no máximo 1 erro grave em 25 perguntas respondíveis, 100% de citações válidas, nenhuma citação de dispositivo revogado e nenhuma conclusão ou recomendação em casos pessoais.
 - **CA27.** A divisão de teste foi executada nas tags v0.3 e v1.0, e os resultados estão publicados mesmo que abaixo das metas.
-- **CA28.** Nenhum commit que altera `rag/` ou `avaliacao/` tem o trailer `Autor-agente: dev`. Commits do dev sempre levam esse trailer.
+- **CA28.** Nenhum commit que altera `rag/` ou `avaliacao/` tem o trailer `Autor-agente: dev`. Commits do dev sempre levam esse trailer. Exceção declarada: o commit de `avaliacao/perguntas_v1.jsonl` leva `Rascunho-por: Claude` e `Revisado-por: Lucas` (seção 13.1).
 - **CA29.** O README contém tudo que a seção 15 lista como obrigatório, incluindo a frase de que não houve validação com usuários externos.
 - **CA30.** Cada marco tem revisão do verificador, sem achado HIGH aberto.
 - **CA31.** Se Q1 escolher vídeo, o README traz um vídeo de até 2 minutos com pergunta respondida, recusa e caso pessoal.
@@ -384,7 +384,7 @@ As horas são estimativas minhas, a revisar no fim do M2. Lucas: **cerca de 45 a
 
 ### M1. Normas e perguntas (dev e Lucas, 10 a 15 h)
 **Antes de ver as normas, Lucas faz L1.1 e L1.2**, pois essa ordem é parte do rigor da avaliação.
-- L1.1 Escolher fontes públicas de dúvidas e escrever as 60 perguntas em linguagem de consumidor.
+- L1.1 Escolher fontes públicas de dúvidas e escrever as 60 perguntas em linguagem de consumidor. Alterado em 2026-11-09: a pedido do Lucas, o Claude rascunhou as perguntas e Lucas as revisou (seção 13.1).
 - L1.2 Fazer commit das perguntas sem referências.
 - **dev:** RF1 a RF5 e RF27, com a conferência das normas no Planalto.
 - L1.3 Conferir os dispositivos sorteados (CA3).
@@ -459,6 +459,7 @@ Requer resposta a Q1.
 
 ### 13.1 Montagem do conjunto
 **Perguntas:**
+- **Alteração de 2026-11-09:** a pedido do Lucas, as 60 perguntas foram rascunhadas pelo Claude a partir de títulos de reclamações públicas do Reclame Aqui, sem consultar as normas coletadas, e revisadas e aprovadas por Lucas. Limitações declaradas no README: o Claude conhece o CDC, o que pode aproximar os temas da lei; 11 perguntas não vêm de reclamação específica; `url_origem` aponta para a lista da empresa. As regras abaixo continuam valendo para revisões futuras.
 - São 60 perguntas escritas por Lucas, tiradas de dúvidas em fontes públicas, como páginas de orientação de Procons e órgãos públicos e reclamações públicas de consumidores. As fontes exatas são escolhidas e registradas no M1.
 - A fonte fornece apenas a dúvida. Lucas reescreve com as próprias palavras, sem copiar a resposta, sem nomes e sem empresas identificáveis.
 - São escritas em linguagem de consumidor e **antes de consultar a norma**, com commit próprio. Esse commit é a prova da ordem (CA9).
