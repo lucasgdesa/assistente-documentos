@@ -502,7 +502,7 @@ Em `fontes`, cada lista interna é um grupo de alternativas: um item do grupo ba
 | Caso pessoal (`tipo: caso_pessoal`, `respondivel: false`) | 10 | 6 | 4 |
 | **Total** | **60** | **40** | **20** |
 
-O sorteio dev e teste é estratificado pelo desfecho, com cotas fixas, e a semente será registrada no repositório. As métricas por tipo escrito continuam relatadas à parte.
+O sorteio dev e teste é estratificado pelo desfecho, com cotas fixas. Feito em 2026-11-09 com semente 20261109: para cada desfecho, os ids em ordem crescente passam por `random.Random(20261109).sample` (respondível, depois fora, depois caso pessoal) com as cotas do teste. As métricas por tipo escrito continuam relatadas à parte.
 
 ### 13.3 Métricas e metas iniciais
 
